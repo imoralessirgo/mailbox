@@ -106,27 +106,35 @@ void main(int argc,char* argv[]){
 	}
 //	char buff[5];
 	msg msg;
+	int value, threadNum;
 	while(1){
 	//	buff = "2 5\n";
-		char buff[5] = "";
-		fgets(buff,5,stdin);
+		char buff[100] = "";
+		fgets(buff,100,stdin);
 		if(buff[0] != '\n'){
-			int threadNum = atoi(&buff[2]) - 1;
-			msg.value = atoi(&buff[0]);
-			sendMsg(threadNum,&msg);
-		}else if(buff[0] == '\n'){
+			sscanf(buff,"%d %d",&value,&threadNum);
+			if(value < 0){ // recieved negative input, ignore & prompt user again
+				printf("%d id not a valid message value.\n",value);
+			}else if(threadNum > numThreads){ // mailbox num not valid ignore & promt user again
+				printf("Requested a larger number than existing threads\n");
+			}else{ // mailbox and message valid, send message
+				threadNum = threadNum - 1; //align to array index
+				msg.value = value; // set message value 
+				sendMsg(threadNum,&msg); // send message
+			}	
+		}else if(buff[0] == '\n'){ // found singnal to terminate
 			msg.value = -1;
-			for(int i = 0; i<numThreads;i++){
+			for(int i = 0; i<numThreads;i++){ //for each thread deliver termination message
 				sendMsg(i,&msg);
 			}  //terminte all threads 
 			break;
 		}
 	}
 
-	for(int i = 0; i<numThreads;i++){
-		pthread_join(threadID[i],NULL);
-		sem_destroy(&mbarr[i].psem);
-		sem_destroy(&mbarr[i].csem);
+	for(int i = 0; i<numThreads;i++){ // for each child thread
+		pthread_join(threadID[i],NULL); // wait on thread
+		sem_destroy(&mbarr[i].psem); // destroy producer semaphore
+		sem_destroy(&mbarr[i].csem); // destroy consumer semaphore 
 	}
 	//free(mbarr);
 	//free(threadID);
