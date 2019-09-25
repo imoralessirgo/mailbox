@@ -47,48 +47,46 @@ void initMailBox(int threadIndex){
 	mbarr[threadIndex] = mb;
 }
 void sendMsg(int iTo, msg *pMsg){
-	/*if(iTo < 0){
-		printf("The result from thread %d is %d from %d operations during %d secs.",pMsg->iFrom,pMsg->value,pMsg->cnt,pMsg->tot);
-		return;
-	}*/
 	sem_wait(&mbarr[iTo].psem);
-	int val =  pMsg->value;
 	mbarr[iTo].message.value = pMsg->value;
-	val = 0;
-	val = mbarr[iTo].message.value;
 	sem_post(&mbarr[iTo].csem);
-	return;		
+}
+
+// additional method
+void NBsendMsg(int iTo, msg *pMsg){
+        if(sem_trywait(&mbarr[iTo].psem) == EAGAIN){return -1;}
+        mbarr[iTo].message.value = pMsg->value;
+        sem_post(&mbarr[iTo].csem);
 }
 
 void recvMsg(int iRecv, msg *pMsg){
 	sem_wait(&mbarr[iRecv].csem);
 	pMsg->value = mbarr[iRecv].message.value;	
 	sem_post(&mbarr[iRecv].psem);
-	int arr =  mbarr[iRecv].message.value;
-	arr = pMsg->value;
-	return;
 }
 
 
-
 void* adder(void* arg){
-	int index = (long) arg;
-	msg message;
-	int count = 1;
-	int  numOps = -1;
+	int index = (long) arg; // fetch my index from parent
+	msg message; // message to deliver back to parent
+	int count = 1; // account for -1 in termination message
+	int  numOps = -1; // account for termination message operation
 	time_t start_time = time(NULL);
 	do{	
-        	recvMsg(index,&message);
-		numOps++;
-		count += message.value;	
+        	recvMsg(index,&message); // wait for message
+		numOps++; // account for value modification
+		count += message.value;	// add new value to stored value
+
 	}while(message.value > 0);
+
+	// build up final thread info message
 	message.iFrom = index + 1;
 	message.value = count;
 	message.cnt = numOps;
-	message.tot = ((int)(time(NULL)-start_time));	
+	message.tot = ((int)(time(NULL)-start_time)); // calculate total thread execution time	
 	
 	printf("The result from thread %d is %d from %d operations during %d secs. \n",message.iFrom,message.value,message.cnt,message.tot);
-	return;
+	return arg;
 }
 
 
