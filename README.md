@@ -11,6 +11,8 @@ The user can then termnate the program by sending a \n as input. Each thread the
 
 
 To compile this program execute the following command:
+	make
+	OR
 	gcc -std=gnu99 -o mail mail.c -lpthread
 
 

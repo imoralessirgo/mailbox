@@ -51,14 +51,14 @@ void sendMsg(int iTo, msg *pMsg){
 	mbarr[iTo].message.value = pMsg->value;
 	sem_post(&mbarr[iTo].csem);
 }
-
+/*
 // additional method
 void NBsendMsg(int iTo, msg *pMsg){
         if(sem_trywait(&mbarr[iTo].psem) == EAGAIN){return -1;}
         mbarr[iTo].message.value = pMsg->value;
         sem_post(&mbarr[iTo].csem);
 }
-
+*/
 void recvMsg(int iRecv, msg *pMsg){
 	sem_wait(&mbarr[iRecv].csem);
 	pMsg->value = mbarr[iRecv].message.value;	
@@ -110,8 +110,9 @@ void main(int argc,char* argv[]){
 		char buff[100] = "";
 		fgets(buff,100,stdin);
 		if(buff[0] != '\n'){
-			sscanf(buff,"%d %d",&value,&threadNum);
-			if(value < 0){ // recieved negative input, ignore & prompt user again
+			if(sscanf(buff,"%d %d",&value,&threadNum) != 2){
+				printf("Invalid format");
+			}else if(value < 0){ // recieved negative input, ignore & prompt user again
 				printf("%d id not a valid message value.\n",value);
 			}else if(threadNum > numThreads){ // mailbox num not valid ignore & promt user again
 				printf("Requested a larger number than existing threads\n");
